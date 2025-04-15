@@ -1,0 +1,9 @@
+JYT281,Automóvil,Volkswagen,Rojo,2025,true
+KBP300,Motocicleta,Bentley,Azul,2010,false
+KBV300,Campero,Skoda,Gris,2010,false
+WYT500,Automóvil,Audi,Rojo,2023,true
+RZK508,Camioneta,RENAULT,Rojo,2019,true
+FBS100,Automóvil,Porsche,Negro,2000,true
+RZX280,Camioneta,TOYOTA,Blanco,1994,true
+RZE900,Microbus,CHEVROLET,Gris,2024,true
+KAK000,Automóvil,KIA,Negro,2010,true
