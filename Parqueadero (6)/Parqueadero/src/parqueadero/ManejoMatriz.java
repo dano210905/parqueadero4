@@ -184,24 +184,95 @@ return objv;
 NO se admiten repeticiones pero en la matriz sí, retorna verdadero si se grabo algo de la 
 matriz al archivo y retorna falso si no se grabó nada, puede ser porque ya todo estaba
 repetido o porque la matriz o el archivo esten vacios*/
-public boolean GrabarMatriz(Object mat[][], int f, int c, Archivos objar, CRUDVehiculo objCrud)
-{
-boolean sw=false;//variable de retorno, queda en falso si no se graba nada	
-   int i,j;
-   for(i=0;i<f;i=i+1)//ciclo de filas
-   {
-      for(j=0;j<c;j=j+1)//ciclo de columnas
-      {
-       //se busca el dato de la matriz en el archivo para NO grabar repetidos
-       if(objCrud.Buscar(objar, ((Vehiculos)mat[i][j]).getNroPlaca())==false)
-       {
-	  objCrud.GrabarVehiculo(objar, (Vehiculos)mat[i][j]);
-          sw=true;//se grabó algun dato no repetido o no existente en el archivo
-       }//fin si
-      }//fin para j
-    }//fin para i
-   return sw;
-}//fin copiar archivo a la lista
+public String GrabarMatriz(Object mat[][], int f, int c, Archivos objArch, CRUDVehiculo objCrud) {
+    if(mat == null || f <= 0 || c <= 0 || objArch == null || objCrud == null) {
+        return "Error: Datos inválidos para copiar matriz";
+    }
+    
+    boolean grabadoAlgo = false;
+    try {
+        for(int i = 0; i < f; i++) {
+            for(int j = 0; j < c; j++) {
+                Vehiculos v = (Vehiculos)mat[i][j];
+                if(v != null && !objCrud.Buscar(objArch, v.getNroPlaca())) {
+                    objCrud.GrabarVehiculo(objArch, v);
+                    grabadoAlgo = true;
+                }
+            }
+        }
+        return grabadoAlgo ? "Matriz copiada al archivo exitosamente" 
+                         : "No se grabaron vehículos nuevos (posiblemente repetidos)";
+    } catch(Exception e) {
+        return "Error al copiar matriz: " + e.getMessage();
+    }
+}
+
+// Eliminar el método copiarMatrizAArchivo ya que ahora usamos GrabarMatriz directamente
+public void copiarMatrizAArchivo(Object mat[][], int f, int c, Archivos objArch, CRUDVehiculo objCrud) {
+    if(mat == null || objArch == null || objCrud == null) return;
+    
+    for(int i = 0; i < f; i++) {
+        for(int j = 0; j < c; j++) {
+            Vehiculos v = (Vehiculos)mat[i][j];
+            if(v != null && !objCrud.Buscar(objArch, v.getNroPlaca())) {
+                objCrud.GrabarVehiculo(objArch, v);
+            }
+        }
+    }
+}
+public void copiarDosRegistrosAMatriz(Archivos objArch, Object mat[][], int f, int c) {
+    try {
+        objArch.AbrirArchivoModoLectura("Vehiculos.txt");
+        String[] primerReg = objArch.LeerRegistro(6);
+        String[] ultimoReg = primerReg;
+        String[] temp;
+        
+        while((temp = objArch.LeerRegistro(6)) != null) {
+            ultimoReg = temp;
+        }
+        
+        if(primerReg != null) {
+            mat[0][0] = new Vehiculos(primerReg[0], primerReg[1], primerReg[2], 
+                                     primerReg[3], Integer.parseInt(primerReg[4]), 
+                                     Boolean.parseBoolean(primerReg[5]));
+            
+            mat[f-1][c-1] = new Vehiculos(ultimoReg[0], ultimoReg[1], ultimoReg[2], 
+                                         ultimoReg[3], Integer.parseInt(ultimoReg[4]), 
+                                         Boolean.parseBoolean(ultimoReg[5]));
+        }
+    } catch(Exception e) {
+        JOptionPane.showMessageDialog(null, "Error: " + e.getMessage());
+    } finally {
+        objArch.CerrarArchivoModoLectura();
+    }
+}
+public void contarVehiculosMismoColor(Archivos objArch, Object mat[][], int f, int c) {
+    try {
+        objArch.AbrirArchivoModoLectura("Vehiculos.txt");
+        String[] primerReg = objArch.LeerRegistro(6);
+        if(primerReg == null) return;
+        
+        String colorPrimero = primerReg[3];
+        int contador = 0;
+        StringBuilder lista = new StringBuilder();
+        
+        for(int i = 0; i < f; i++) {
+            for(int j = 0; j < c; j++) {
+                Vehiculos v = (Vehiculos)mat[i][j];
+                if(v != null && v.getColor().equalsIgnoreCase(colorPrimero)) {
+                    contador++;
+                    lista.append(v.getNroPlaca()).append("\n");
+                }
+            }
+        }
+        
+        JOptionPane.showMessageDialog(null, "Total: " + contador + "\n\n" + lista.toString());
+    } catch(Exception e) {
+        JOptionPane.showMessageDialog(null, "Error: " + e.getMessage());
+    } finally {
+        objArch.CerrarArchivoModoLectura();
+    }
+}
  
     
     
