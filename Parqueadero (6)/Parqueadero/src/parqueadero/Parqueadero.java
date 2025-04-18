@@ -82,7 +82,15 @@ public class Parqueadero {
                             + "9. Copiar matriz a archivo\n"
                             + "10. Copiar 2 registros a matriz\n"
                             + "11. Contar vehículos mismo color\n"
-                            + "15. Volver\n");
+                            + "12. Porcentaje autos (Matriz vs Archivo)\n" 
+                            +  "13. Buscar por color (vs último en matriz)\n" 
+                             +  "14. Promedio vehículos en mal estado\n" 
+                              +  "15. Grabar vehículos amarillos\n" 
+                              +  "16. Promedio de modelos (diagonal/fila)\n" 
+                                +  "17. cambiar estado vehiculos 2011\n"
+                                +  "18. reemplazar extremos\n"
+                               +  "19. Volver al menú principal");
+                         
                             
                         switch(op3) {
                             case 1:
@@ -126,15 +134,83 @@ public class Parqueadero {
                                          JOptionPane.showMessageDialog(null, "No hay matriz creada");
                                }
                               break;
-                            case 10:
-                                objManMat.copiarDosRegistrosAMatriz(objarc, mat, f, c);
-                                JOptionPane.showMessageDialog(null, "Registros copiados a matriz");
-                                break;
+  case 10:
+    try {
+        String resultado = ((ManejoMatriz)objManMat).copiarDosRegistrosAMatriz(objarc, mat, f, c);
+        JOptionPane.showMessageDialog(null, resultado);
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(null, "Error: " + e.getMessage());
+    }
+    break;
                             case 11:
                                 objManMat.contarVehiculosMismoColor(objarc, mat, f, c);
                                 break;
-                        }
-                    } while(op3 < 15);
+
+ case 12:
+    JOptionPane.showMessageDialog(null, 
+        objManMat.porcentajeAutomoviles(mat, f, c, objarc, objcrudv));
+    break;
+    
+case 13:
+    JOptionPane.showMessageDialog(null, 
+        objManMat.vehiculosMismoColor(mat, f, c, objarc, objcrudv));
+    break;
+case 14:
+    JOptionPane.showMessageDialog(null, 
+        objManMat.promedioMalEstado(mat, f, c));
+    break;
+case 15:
+    JOptionPane.showMessageDialog(null, 
+        objManMat.grabarAmarillos(mat, f, c, objarc, objcrudv));
+    break;
+case 16:
+    JOptionPane.showMessageDialog(null, 
+        objManMat.promedioModelos(mat, f, c));
+    break;
+    case 17:
+    String resultado23 = objManMat.cambiarEstadoModelo2011(mat, f, c, objLS);
+    JOptionPane.showMessageDialog(null, resultado23);
+    break;
+
+// Agregar este case en el menú de matrices (case 2) después del case 8 y antes del case 9
+case 18: // Reemplazar extremos de matriz (versión simplificada)
+    if (mat == null) {
+        JOptionPane.showMessageDialog(null, "Primero debe crear una matriz");
+        break;
+    }
+    
+    if (f < 2 || c < 2) {
+        JOptionPane.showMessageDialog(null, "La matriz debe ser de al menos 2x2");
+        break;
+    }
+    
+    // Mostrar diálogo simple de confirmación
+    String confirmacion = JOptionPane.showInputDialog(
+        "¿Desea reemplazar los extremos? (Escriba SI para confirmar)");
+    
+    if (confirmacion != null && confirmacion.equalsIgnoreCase("SI")) {
+        // Reemplazar [0][0]
+        String placa = JOptionPane.showInputDialog("Ingrese placa para [0][0]:");
+        mat[0][0] = new Vehiculos().IngresarDatos(placa);
+        
+        // Reemplazar [0][última columna]
+        placa = JOptionPane.showInputDialog("Ingrese placa para [0]["+(c-1)+"]:");
+        mat[0][c-1] = new Vehiculos().IngresarDatos(placa);
+        
+        // Reemplazar [última fila][0]
+        placa = JOptionPane.showInputDialog("Ingrese placa para ["+(f-1)+"][0]:");
+        mat[f-1][0] = new Vehiculos().IngresarDatos(placa);
+        
+        // Reemplazar [última fila][última columna]
+        placa = JOptionPane.showInputDialog("Ingrese placa para ["+(f-1)+"]["+(c-1)+"]:");
+        mat[f-1][c-1] = new Vehiculos().IngresarDatos(placa);
+        
+        JOptionPane.showMessageDialog(null, "Extremos reemplazados exitosamente");
+    } else {
+        JOptionPane.showMessageDialog(null, "Operación cancelada");
+    }
+    break;          }
+                    } while(op3 < 19);
                     break;
                     
                 case 3: // Menú Lista Simple
@@ -149,7 +225,11 @@ public class Parqueadero {
                             + "7. Eliminar primero\n"
                             + "8. Eliminar último\n"
                             + "9. Eliminar específico\n"
-                            + "10. Volver\n");
+                                + "10. Pasar Archivo a lista simple\n"
+                                + "11. Pasar lista simple a archivo\n"
+                                 + "12. lista simple antiguos y lista simple neuvos\n"
+                                
+                            + "15. Volver\n");
                             
                         switch(op4) {
                             case 1:
@@ -181,9 +261,27 @@ public class Parqueadero {
                                     objLS.InsertarStart(objV);
                                 }
                                 break;
+                                case 10:
+    String resultado21 = objML.pasarListaSimpleAArchivo(objLS, objarc, objcrudv);
+    JOptionPane.showMessageDialog(null, resultado21);
+    break;
+
+case 11:
+    objLS = objML.pasarArchivoAListaSimple(objarc);
+    JOptionPane.showMessageDialog(null, "Archivo pasado a lista simple");
+    break;
+case 12:
+    ListaSimple listaAntiguos = new ListaSimple();
+    ListaSimple listaNuevos = new ListaSimple();
+    
+    // Llamar al método (ahora muestra el resultado directamente)
+    objML.crearListasPorAntiguedad(listaAntiguos, listaNuevos);
+    break;
+                                
+                                
                             // ... otros casos de lista simple ...
                         }
-                    } while(op4 < 10);
+                    } while(op4 < 15);
                     break;
                     
                 case 4: // Menú Lista Doble
