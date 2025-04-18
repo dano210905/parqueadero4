@@ -220,33 +220,222 @@ public void copiarMatrizAArchivo(Object mat[][], int f, int c, Archivos objArch,
         }
     }
 }
-public void copiarDosRegistrosAMatriz(Archivos objArch, Object mat[][], int f, int c) {
+public String copiarDosRegistrosAMatriz(Archivos objArch, Object[][] mat, int filas, int columnas) {
+    // Validación de matriz
+    if (mat == null || filas <= 0 || columnas <= 0) {
+        return "Matriz no inicializada correctamente";
+    }
+
     try {
-        objArch.AbrirArchivoModoLectura("Vehiculos.txt");
-        String[] primerReg = objArch.LeerRegistro(6);
-        String[] ultimoReg = primerReg;
-        String[] temp;
-        
-        while((temp = objArch.LeerRegistro(6)) != null) {
-            ultimoReg = temp;
+        // Abrir archivo
+        String mensaje = objArch.AbrirArchivoModoLectura("Vehiculos.txt");
+        if (mensaje.contains("Error")) {
+            return "No se pudo abrir el archivo";
         }
-        
-        if(primerReg != null) {
-            mat[0][0] = new Vehiculos(primerReg[0], primerReg[1], primerReg[2], 
-                                     primerReg[3], Integer.parseInt(primerReg[4]), 
-                                     Boolean.parseBoolean(primerReg[5]));
-            
-            mat[f-1][c-1] = new Vehiculos(ultimoReg[0], ultimoReg[1], ultimoReg[2], 
-                                         ultimoReg[3], Integer.parseInt(ultimoReg[4]), 
-                                         Boolean.parseBoolean(ultimoReg[5]));
+
+        // Leer registros
+        String[] primerRegistro = objArch.LeerRegistro(6);
+        String[] ultimoRegistro = primerRegistro;
+        String[] registroActual;
+
+        // Buscar el último registro
+        while ((registroActual = objArch.LeerRegistro(6)) != null) {
+            ultimoRegistro = registroActual;
         }
-    } catch(Exception e) {
-        JOptionPane.showMessageDialog(null, "Error: " + e.getMessage());
+
+        // Validar que existen registros
+        if (primerRegistro == null || ultimoRegistro == null) {
+            return "El archivo está vacío o no tiene registros válidos";
+        }
+
+        // Copiar a matriz (esquina superior izquierda e inferior derecha)
+        mat[0][0] = crearVehiculoDesdeRegistro(primerRegistro);
+        mat[filas-1][columnas-1] = crearVehiculoDesdeRegistro(ultimoRegistro);
+
+        return "Se copiaron exitosamente:\n" +
+               "1. " + primerRegistro[0] + " en [0][0]\n" +
+               "2. " + ultimoRegistro[0] + " en [" + (filas-1) + "][" + (columnas-1) + "]";
+
+    } catch (Exception e) {
+        return "Error durante la copia: " + e.getMessage();
     } finally {
-        objArch.CerrarArchivoModoLectura();
+        try {
+            objArch.CerrarArchivoModoLectura();
+        } catch (Exception e) {
+            System.err.println("Error al cerrar archivo: " + e.getMessage());
+        }
     }
 }
-public void contarVehiculosMismoColor(Archivos objArch, Object mat[][], int f, int c) {
+// Método auxiliar para crear vehículos
+
+// En ManejoListas.java
+public String buscarVehiculosMismoColor(Object mat[][], int maxf, int maxc, Archivos objArch) {
+    StringBuilder resultado = new StringBuilder();
+    int contador = 0;
+    
+    if(maxf == 0 || maxc == 0) return "Matriz vacía";
+    
+    // Obtener color del último vehículo
+    Vehiculos ultimo = (Vehiculos)mat[maxf-1][maxc-1];
+    String colorBuscado = ultimo.getColor();
+    resultado.append("Vehículos con color ").append(colorBuscado).append(":\n");
+    
+    try {
+        objArch.AbrirArchivoModoLectura("Vehiculos.txt");
+        String[] Reg;
+        while((Reg = objArch.LeerRegistro(6)) != null) {
+            if(Reg[3].equalsIgnoreCase(colorBuscado)) {
+                resultado.append("- ").append(Reg[0]).append(" (").append(Reg[2]).append(")\n");
+                contador++;
+            }
+        }
+        objArch.CerrarArchivoModoLectura();
+    } catch(Exception e) {
+        return "Error buscando: " + e.getMessage();
+    }
+    
+    if(contador == 0) {
+        return "No hay vehículos con color " + colorBuscado + " en el archivo";
+    }
+    return resultado.append("Total encontrados: ").append(contador).toString();
+}
+// En ManejoMatriz.java
+public String promedioModelosDiagonal(Object mat[][], int maxf, int maxc) {
+    if(mat == null || maxf == 0 || maxc == 0) return "Matriz vacía";
+    
+    double suma = 0;
+    int contador = 0;
+    String tipoCalculo;
+    
+    if(maxf == maxc) { // Diagonal principal
+        tipoCalculo = "diagonal principal";
+        for(int i = 0; i < maxf; i++) {
+            if(mat[i][i] != null) {
+                Vehiculos v = (Vehiculos)mat[i][i];
+                suma += v.getModelo();
+                contador++;
+            }
+        }
+    } else { // Primera fila
+        tipoCalculo = "primera fila";
+        for(int j = 0; j < maxc; j++) {
+            if(mat[0][j] != null) {
+                Vehiculos v = (Vehiculos)mat[0][j];
+                suma += v.getModelo();
+                contador++;
+            }
+        }
+    }
+    
+    if(contador == 0) return "No hay vehículos para calcular";
+    
+    return String.format("Promedio de modelos (%s): %.2f", tipoCalculo, (suma/contador));
+}
+public String porcentajeAutomoviles(Object[][] mat, int maxf, int maxc, Archivos objArch, CRUDVehiculo objCrud) {
+    // Validación de matriz
+    if(mat == null || maxf == 0 || maxc == 0) return "Matriz vacía o no inicializada";
+    
+    // Contar en matriz
+    int autosMatriz = 0;
+    for(int i = 0; i < maxf; i++) {
+        for(int j = 0; j < maxc; j++) {
+            if(mat[i][j] != null && ((Vehiculos)mat[i][j]).getTipoVehiculo().equalsIgnoreCase("Automóvil")) {
+                autosMatriz++;
+            }
+        }
+    }
+    
+    // Contar en archivo usando el CRUD existente
+    int autosArchivo = objCrud.contarVehiculosPorTipo("Automóvil");
+    
+    if(autosArchivo == 0) return "No hay automóviles en el archivo para comparar";
+    
+    double porcentaje = (autosMatriz * 100.0) / autosArchivo;
+    return String.format("Automóviles - Matriz: %d, Archivo: %d (%.2f%%)", 
+                       autosMatriz, autosArchivo, porcentaje);
+}
+// Nuevo método en CRUDVehiculo.java
+public int contarPorTipoEnArchivo(Archivos objArch, String tipo) {
+    int contador = 0;
+    try {
+        objArch.AbrirArchivoModoLectura("Vehiculos.txt");
+        String[] Reg;
+        while((Reg = objArch.LeerRegistro(6)) != null) {
+            if(Reg[1].equalsIgnoreCase(tipo)) contador++;
+        }
+        objArch.CerrarArchivoModoLectura();
+    } catch(Exception e) {
+        JOptionPane.showMessageDialog(null, "Error contando tipos: " + e.getMessage());
+    }
+    return contador;
+}
+public String promedioMalEstado(Object[][] mat, int maxf, int maxc) {
+    if(mat == null || maxf == 0 || maxc == 0) return "Matriz vacía";
+    
+    int malEstado = 0;
+    int total = 0;
+    String tipoCalculo;
+    
+    if(maxf == maxc) { // Diagonal secundaria
+        tipoCalculo = "diagonal secundaria";
+        for(int i = 0; i < maxf; i++) {
+            Vehiculos v = (Vehiculos)mat[i][maxc-1-i];
+            if(!v.isEstado()) malEstado++;
+            total++;
+        }
+    } else { // Primera columna
+        tipoCalculo = "primera columna";
+        for(int i = 0; i < maxf; i++) {
+            Vehiculos v = (Vehiculos)mat[i][0];
+            if(!v.isEstado()) malEstado++;
+            total++;
+        }
+    }
+    
+    return String.format("%s: %d/%d (%.2f%%) en mal estado", 
+                       tipoCalculo, malEstado, total, (malEstado*100.0/total));
+}
+public String grabarAmarillos(Object[][] mat, int maxf, int maxc, Archivos objArch, CRUDVehiculo objCrud) {
+    if(mat == null || maxf == 0 || maxc == 0) return "Matriz vacía";
+    
+    int grabados = 0;
+    try {
+        objArch.AbrirArchivoModoEscritura("Vehiculos.txt");
+        
+        for(int i = 0; i < maxf; i++) {
+            for(int j = 0; j < maxc; j++) {
+                Vehiculos v = (Vehiculos)mat[i][j];
+                if(v.getColor().equalsIgnoreCase("Amarillo") && 
+                   !objCrud.Buscar(objArch, v.getNroPlaca())) {
+                    objArch.EscribirRegistro(v.EstructuraReg());
+                    grabados++;
+                }
+            }
+        }
+        objArch.CerrarArchivoModoEscritura();
+    } catch(Exception e) {
+        return "Error grabando archivo";
+    }
+    
+    return grabados > 0 ? "Se grabaron " + grabados + " vehículos amarillos" 
+                       : "No se grabaron (ya existían o no hay amarillos)";
+}
+ public String vehiculosMismoColor(Object[][] mat, int maxf, int maxc, Archivos objArch, CRUDVehiculo objCrud) {
+    // Validación de matriz
+    if(mat == null || maxf == 0 || maxc == 0) return "Matriz vacía o no inicializada";
+    
+    // Obtener color del último vehículo en matriz
+    Vehiculos ultimo = (Vehiculos)mat[maxf-1][maxc-1];
+    String colorBuscado = ultimo.getColor();
+    
+    // Usar CRUD para buscar en archivo
+    String resultado = objCrud.buscarPorColor(colorBuscado);
+    
+    return resultado.isEmpty() ? 
+           "No hay vehículos con color " + colorBuscado + " en el archivo" : 
+           "Vehículos color " + colorBuscado + ":\n" + resultado;
+}
+ public void contarVehiculosMismoColor(Archivos objArch, Object mat[][], int f, int c) {
     try {
         objArch.AbrirArchivoModoLectura("Vehiculos.txt");
         String[] primerReg = objArch.LeerRegistro(6);
@@ -273,9 +462,145 @@ public void contarVehiculosMismoColor(Archivos objArch, Object mat[][], int f, i
         objArch.CerrarArchivoModoLectura();
     }
 }
+ public String cambiarEstadoModelo2011(Object[][] mat, int maxf, int maxc, ListaSimple lista) {
+    int cambiosMatriz = 0;
+    int cambiosLista = 0;
+    
+    // Procesar matriz
+    for (int i = 0; i < maxf; i++) {
+        for (int j = 0; j < maxc; j++) {
+            if (mat[i][j] != null && ((Vehiculos)mat[i][j]).getModelo() == 2011) {
+                ((Vehiculos)mat[i][j]).setEstado(false);
+                cambiosMatriz++;
+            }
+        }
+    }
+    
+    // Procesar lista
+    Nodo actual = lista.getStart();
+    while (actual != null) {
+        Vehiculos v = (Vehiculos) actual.getDato();
+        if (v.getModelo() == 2011) {
+            v.setEstado(false);
+            cambiosLista++;
+        }
+        actual = actual.getSig();
+    }
+    
+    return "Cambios realizados - Matriz: " + cambiosMatriz + ", Lista: " + cambiosLista;
+}
+public String reemplazarExtremosMatriz(Object[][] mat, int maxf, int maxc, 
+                                     ListaSimple lista, Archivos objArch) {
+    // Validación de parámetros
+    if (mat == null || lista == null || objArch == null) {
+        return "Error: Parámetros no pueden ser nulos";
+    }
+    if (maxf < 2 || maxc < 2) {
+        return "La matriz debe ser de al menos 2x2";
+    }
+
+    StringBuilder resultado = new StringBuilder();
+    resultado.append("=== Reemplazo Manual de Extremos de Matriz ===\n\n");
+
+    try {
+        // 1. Esquina superior izquierda [0][0]
+        String placa = Validaciones.LeerString("Ingrese placa para [0][0]:");
+        Vehiculos vehiculo = new Vehiculos().IngresarDatos(placa);
+        mat[0][0] = vehiculo;
+        resultado.append("[0][0] reemplazado con: ").append(vehiculo.getNroPlaca()).append("\n");
+
+        // 2. Esquina superior derecha [0][maxc-1]
+        placa = Validaciones.LeerString("Ingrese placa para [0][" + (maxc-1) + "]:");
+        vehiculo = new Vehiculos().IngresarDatos(placa);
+        mat[0][maxc-1] = vehiculo;
+        resultado.append("[0][").append(maxc-1).append("] reemplazado con: ")
+                .append(vehiculo.getNroPlaca()).append("\n");
+
+        // 3. Esquina inferior izquierda [maxf-1][0]
+        placa = Validaciones.LeerString("Ingrese placa para [" + (maxf-1) + "][0]:");
+        vehiculo = new Vehiculos().IngresarDatos(placa);
+        mat[maxf-1][0] = vehiculo;
+        resultado.append("[").append(maxf-1).append("][0] reemplazado con: ")
+                .append(vehiculo.getNroPlaca()).append("\n");
+
+        // 4. Esquina inferior derecha [maxf-1][maxc-1]
+        placa = Validaciones.LeerString("Ingrese placa para [" + (maxf-1) + "][" + (maxc-1) + "]:");
+        vehiculo = new Vehiculos().IngresarDatos(placa);
+        mat[maxf-1][maxc-1] = vehiculo;
+        resultado.append("[").append(maxf-1).append("][").append(maxc-1)
+                .append("] reemplazado con: ").append(vehiculo.getNroPlaca()).append("\n");
+
+        resultado.append("\nTodos los extremos fueron reemplazados exitosamente");
+        return resultado.toString();
+
+    } catch (Exception e) {
+        return "Error durante el proceso: " + e.getMessage();
+    }
+}
+
+private Vehiculos crearVehiculoDesdeRegistro(String[] registro) throws Exception {
+    if (registro == null || registro.length < 6) {
+        throw new Exception("Registro inválido");
+    }
+    return new Vehiculos(
+        registro[0], registro[1], registro[2],
+        registro[3], Integer.parseInt(registro[4]),
+        Boolean.parseBoolean(registro[5])
+    );
+}
+ public String crearListasPorAntiguedad(Archivos objArch, ListaSimple listaAntiguos, ListaSimple listaNuevos) {
+    try {
+        objArch.AbrirArchivoModoLectura("Vehiculos.txt");
+        String[] Reg;
+        int antiguos = 0, nuevos = 0;
+        
+        while ((Reg = objArch.LeerRegistro(6)) != null) {
+            int modelo = Integer.parseInt(Reg[4]);
+            Vehiculos v = new Vehiculos(Reg[0], Reg[1], Reg[2], Reg[3], modelo, Boolean.parseBoolean(Reg[5]));
+            
+            if (modelo > 1980 && modelo < 2014) {
+                listaAntiguos.CrearPorFinal(v);
+                antiguos++;
+            } else if (modelo >= 2014 && modelo <= 2024) {
+                listaNuevos.CrearPorFinal(v);
+                nuevos++;
+            }
+        }
+        
+        return String.format("Listas creadas - Antiguos: %d, Nuevos: %d", antiguos, nuevos);
+    } catch (Exception e) {
+        return "Error: " + e.getMessage();
+    } finally {
+        objArch.CerrarArchivoModoLectura();
+    }
+}
+ public String promedioModelos(Object[][] mat, int maxf, int maxc) {
+    if(mat == null || maxf == 0 || maxc == 0) return "Matriz vacía";
+    
+    double suma = 0;
+    int contador = 0;
+    String tipoCalculo;
+    
+    if(maxf == maxc) { // Diagonal principal
+        tipoCalculo = "diagonal principal";
+        for(int i = 0; i < maxf; i++) {
+            Vehiculos v = (Vehiculos)mat[i][i];
+            suma += v.getModelo();
+            contador++;
+        }
+    } else { // Primera fila
+        tipoCalculo = "primera fila";
+        for(int j = 0; j < maxc; j++) {
+            Vehiculos v = (Vehiculos)mat[0][j];
+            suma += v.getModelo();
+            contador++;
+        }
+    }
+    
+    return String.format("Promedio modelos (%s): %.2f", tipoCalculo, (suma/contador));
+}
  
-    
-    
+ 
     
     //prueba de escritorio, para no tener que estar ingresando siempre
     
