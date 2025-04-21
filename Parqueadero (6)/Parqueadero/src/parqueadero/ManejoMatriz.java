@@ -184,87 +184,81 @@ return objv;
 NO se admiten repeticiones pero en la matriz sí, retorna verdadero si se grabo algo de la 
 matriz al archivo y retorna falso si no se grabó nada, puede ser porque ya todo estaba
 repetido o porque la matriz o el archivo esten vacios*/
-public String GrabarMatriz(Object mat[][], int f, int c, Archivos objArch, CRUDVehiculo objCrud) {
-    if(mat == null || f <= 0 || c <= 0 || objArch == null || objCrud == null) {
-        return "Error: Datos inválidos para copiar matriz";
-    }
+public boolean GrabarMatriz(Object mat[][], int f, int c, Archivos objar, CRUDVehiculo objCrud)
+{
+boolean sw=false;//variable de retorno, queda en falso si no se graba nada	
+   int i,j;
+   for(i=0;i<f;i=i+1)//ciclo de filas
+   {
+      for(j=0;j<c;j=j+1)//ciclo de columnas
+      {
+       //se busca el dato de la matriz en el archivo para NO grabar repetidos
+       if(objCrud.Buscar(objar, ((Vehiculos)mat[i][j]).getNroPlaca())==false)
+       {
+	  objCrud.GrabarVehiculo(objar, (Vehiculos)mat[i][j]);
+          sw=true;//se grabó algun dato no repetido o no existente en el archivo
+       }//fin si
+      }//fin para j
+    }//fin para i
+   return sw;
+}//fin copiar archivo a la lista
+
+public Object[] copiarMatrizAArchivoConVisualizacion(Object mat[][], int f, int c, Archivos objar, CRUDVehiculo objCrud) {
+    Object[] resultados = new Object[2]; // [0] = reporte, [1] = matriz
+    int copiados = 0;
+    int repetidos = 0;
+    StringBuilder reporte = new StringBuilder();
     
-    boolean grabadoAlgo = false;
+    // Crear copia de la matriz para marcación
+    Object[][] matrizMarcada = new Object[f][c];
+    System.arraycopy(mat, 0, matrizMarcada, 0, mat.length);
+
     try {
+        objar.AbrirArchivoModoEscritura("Vehiculos.txt");
+        
         for(int i = 0; i < f; i++) {
             for(int j = 0; j < c; j++) {
-                Vehiculos v = (Vehiculos)mat[i][j];
-                if(v != null && !objCrud.Buscar(objArch, v.getNroPlaca())) {
-                    objCrud.GrabarVehiculo(objArch, v);
-                    grabadoAlgo = true;
+                if(mat[i][j] instanceof Vehiculos) {
+                    Vehiculos v = (Vehiculos)mat[i][j];
+                    boolean existe = false;
+                    
+                    try {
+                        existe = objCrud.Buscar(objar, v.getNroPlaca());
+                    } catch (Exception e) {
+                        // Silenciar errores
+                    }
+                    
+                    if(!existe) {
+                        objCrud.GrabarVehiculo(objar, v);
+                        copiados++;
+                        // Marcar como copiado en la nueva matriz
+                        matrizMarcada[i][j] = "✓ " + v.toString();
+                    } else {
+                        repetidos++;
+                        // Marcar como repetido en la nueva matriz
+                        matrizMarcada[i][j] = "✗ " + v.toString();
+                    }
                 }
             }
         }
-        return grabadoAlgo ? "Matriz copiada al archivo exitosamente" 
-                         : "No se grabaron vehículos nuevos (posiblemente repetidos)";
-    } catch(Exception e) {
-        return "Error al copiar matriz: " + e.getMessage();
-    }
-}
-
-// Eliminar el método copiarMatrizAArchivo ya que ahora usamos GrabarMatriz directamente
-public void copiarMatrizAArchivo(Object mat[][], int f, int c, Archivos objArch, CRUDVehiculo objCrud) {
-    if(mat == null || objArch == null || objCrud == null) return;
-    
-    for(int i = 0; i < f; i++) {
-        for(int j = 0; j < c; j++) {
-            Vehiculos v = (Vehiculos)mat[i][j];
-            if(v != null && !objCrud.Buscar(objArch, v.getNroPlaca())) {
-                objCrud.GrabarVehiculo(objArch, v);
-            }
-        }
-    }
-}
-public String copiarDosRegistrosAMatriz(Archivos objArch, Object[][] mat, int filas, int columnas) {
-    // Validación de matriz
-    if (mat == null || filas <= 0 || columnas <= 0) {
-        return "Matriz no inicializada correctamente";
-    }
-
-    try {
-        // Abrir archivo
-        String mensaje = objArch.AbrirArchivoModoLectura("Vehiculos.txt");
-        if (mensaje.contains("Error")) {
-            return "No se pudo abrir el archivo";
-        }
-
-        // Leer registros
-        String[] primerRegistro = objArch.LeerRegistro(6);
-        String[] ultimoRegistro = primerRegistro;
-        String[] registroActual;
-
-        // Buscar el último registro
-        while ((registroActual = objArch.LeerRegistro(6)) != null) {
-            ultimoRegistro = registroActual;
-        }
-
-        // Validar que existen registros
-        if (primerRegistro == null || ultimoRegistro == null) {
-            return "El archivo está vacío o no tiene registros válidos";
-        }
-
-        // Copiar a matriz (esquina superior izquierda e inferior derecha)
-        mat[0][0] = crearVehiculoDesdeRegistro(primerRegistro);
-        mat[filas-1][columnas-1] = crearVehiculoDesdeRegistro(ultimoRegistro);
-
-        return "Se copiaron exitosamente:\n" +
-               "1. " + primerRegistro[0] + " en [0][0]\n" +
-               "2. " + ultimoRegistro[0] + " en [" + (filas-1) + "][" + (columnas-1) + "]";
-
+        
+        reporte.append("REPORTE DE COPIA:\n")
+              .append("Vehículos copiados: ").append(copiados).append("\n")
+              .append("Vehículos repetidos: ").append(repetidos);
+              
     } catch (Exception e) {
-        return "Error durante la copia: " + e.getMessage();
+        reporte.append("Error durante la copia: ").append(e.getMessage());
     } finally {
         try {
-            objArch.CerrarArchivoModoLectura();
+            objar.CerrarArchivoModoEscritura();
         } catch (Exception e) {
-            System.err.println("Error al cerrar archivo: " + e.getMessage());
+            // Silenciar error de cierre
         }
     }
+    
+    resultados[0] = reporte.toString();
+    resultados[1] = matrizMarcada;
+    return resultados;
 }
 // Método auxiliar para crear vehículos
 
@@ -599,7 +593,236 @@ private Vehiculos crearVehiculoDesdeRegistro(String[] registro) throws Exception
     
     return String.format("Promedio modelos (%s): %.2f", tipoCalculo, (suma/contador));
 }
+ public String copiarMatrizAArchivoConReporte(Object mat[][], int f, int c, Archivos objar, CRUDVehiculo objCrud) {
+    int copiados = 0;
+    int repetidos = 0;
+    StringBuilder reporte = new StringBuilder();
+    
+    // Verificar matriz válida
+    if(mat == null || f <= 0 || c <= 0) {
+        return "Matriz inválida o vacía";
+    }
+
+    try {
+        // Abrir archivo una sola vez (evita múltiples mensajes)
+        objar.AbrirArchivoModoEscritura("Vehiculos.txt");
+        
+        // Procesar toda la matriz
+        for(int i = 0; i < f; i++) {
+            for(int j = 0; j < c; j++) {
+                if(mat[i][j] instanceof Vehiculos) {
+                    Vehiculos v = (Vehiculos)mat[i][j];
+                    
+                    // Buscar sin mostrar mensajes
+                    boolean existe = false;
+                    try {
+                        existe = objCrud.Buscar(objar, v.getNroPlaca());
+                    } catch (Exception e) {
+                        // Silenciar errores de búsqueda
+                    }
+                    
+                    if(!existe) {
+                        objCrud.GrabarVehiculo(objar, v);
+                        copiados++;
+                    } else {
+                        repetidos++;
+                    }
+                }
+            }
+        }
+        
+        // Construir reporte final
+        reporte.append("Resultado de copia:\n")
+              .append("Vehículos nuevos copiados: ").append(copiados).append("\n")
+              .append("Vehículos existentes (no copiados): ").append(repetidos);
+              
+    } catch (Exception e) {
+        reporte.append("Error durante la copia: ").append(e.getMessage());
+    } finally {
+        try {
+            objar.CerrarArchivoModoEscritura();
+        } catch (Exception e) {
+            // Silenciar error de cierre
+        }
+    }
+    
+    return reporte.toString();
+}
  
+ public String mostrarPlacasDiagonales(Object[][] mat,int maxf, int maxc,Archivos objar,CRUDVehiculo objCrud) {
+    StringBuilder resultado = new StringBuilder();
+    int n = mat.length;
+    if (maxf==maxc) {
+        
+    
+
+    // para la Diagonal Principal
+    resultado.append("Diagonal Principal:\n");
+    for (int i = 0; i < n; i++) {
+        if (mat[i][i] != null && mat[i][i] instanceof Vehiculos) {
+            Vehiculos v = (Vehiculos) mat[i][i];
+            resultado.append(v.getNroPlaca()).append("\n");
+        }
+    }
+
+    // para la Diagonal Secundaria
+    resultado.append("\nDiagonal Secundaria:\n");
+    for (int i = 0; i < n; i++) {
+        int j = n - i - 1;
+        if (mat[i][j] != null && mat[i][j] instanceof Vehiculos) {
+            Vehiculos v = (Vehiculos) mat[i][j];
+            resultado.append(v.getNroPlaca()).append("\n");
+        }
+    }
+    
+    }else{
+        JOptionPane.showMessageDialog(null,"La matriz NO es cuadrada no puede mostrar diagonal");        
+    }
+    
+    return resultado.toString();
+
+    
+}
+ 
+public double promedioModeloss(Object[][] mat, int f, int c) {
+    int suma = 0, cont = 0;
+    for (int i = 0; i < f; i++) {
+        for (int j = 0; j < c; j++) {
+            Vehiculos v = (Vehiculos) mat[i][j];
+            suma += v.getModelo();
+            cont++;
+        }
+    }
+    return cont > 0 ? (double) suma / cont : 0;
+}
+public String promedioRenaultPorFilas(Object[][] mat, int f, int c) {
+    StringBuilder resultado = new StringBuilder();
+    
+    for (int i = 0; i < f; i++) {
+        int conteoRenault = 0;
+        for (int j = 0; j < c; j++) {
+            if (mat[i][j] != null) {
+                Vehiculos v = (Vehiculos) mat[i][j];
+                if (v.getMarca().equalsIgnoreCase("Renault")) {
+                    conteoRenault++;
+                }
+            }
+        }
+        resultado.append("Fila ").append(i + 1).append(": ")
+                 .append("Promedio Renault = ").append((double) conteoRenault / c).append("\n");
+    }
+    
+    return resultado.toString();
+}
+public String promedioCamionetasPorColumnas(Object[][] mat, int f, int c) {
+    StringBuilder resultado = new StringBuilder();
+    
+    for (int j = 0; j < c; j++) {
+        int conteoCamionetas = 0;
+        for (int i = 0; i < f; i++) {
+            if (mat[i][j] != null) {
+                Vehiculos v = (Vehiculos) mat[i][j];
+                if (v.getTipoVehiculo().equalsIgnoreCase("camioneta")) {
+                    conteoCamionetas++;
+                }
+            }
+        }
+        resultado.append("Columna ").append(j + 1).append(": ")
+                 .append("Promedio Camionetas = ").append((double) conteoCamionetas / f).append("\n");
+    }
+    
+    return resultado.toString();
+}
+public String filtrarVehiculosModelosColor(Object[][] mat, int f, int c) {
+    String texto = "";
+    for (int i = 0; i < f; i++) {
+        for (int j = 0; j < c; j++) {
+            Vehiculos v = (Vehiculos) mat[i][j];
+            if (v.getModelo() > 2000 && !v.getColor().equalsIgnoreCase("Negro")) {
+                texto += "Placa: " + v.getNroPlaca() + ", Modelo: " + v.getModelo() + "\n";
+            }
+        }
+    }
+    return texto;
+}
+public ListaDoble crearListaVehiculosRojos(Object[][] mat, int maxF, int maxC) {
+    ListaDoble listaRojos = new ListaDoble();
+    boolean hayRojos = false;
+
+    for (int i = 0; i < maxF; i++) {
+        for (int j = 0; j < maxC; j++) {
+            Vehiculos v = (Vehiculos) mat[i][j];
+            if (v != null && v.getColor().equalsIgnoreCase("rojo")) {
+                listaRojos.CrearPorFinal(v);
+                hayRojos = true;
+            }
+        }
+    }
+
+    if (!hayRojos) {
+        JOptionPane.showMessageDialog(null, "La matriz no tiene vehículos rojos, ¡no se creó la lista!");
+    } else {
+        JOptionPane.showMessageDialog(null, "Lista de vehículos rojos:\n" + listaRojos.JuntarDesdeStart());
+    }
+    return listaRojos;
+}
+public ListaDoble copiarDiagonalPrincipal(Object[][] mat, int maxF, int maxC) {
+    ListaDoble listaDiagonal = new ListaDoble();
+    
+    if (maxF != maxC) {
+        JOptionPane.showMessageDialog(null, "La matriz no es cuadrada, no hay diagonal principal.");
+        return listaDiagonal;
+    }
+
+    for (int i = 0; i < maxF; i++) {
+        Vehiculos v = (Vehiculos) mat[i][i];
+        if (v != null) {
+            listaDiagonal.CrearPorFinal(v);
+        }
+    }
+
+    if (listaDiagonal.IsEmpty()) {
+        JOptionPane.showMessageDialog(null, "La diagonal principal está vacía.");
+    } else {
+        JOptionPane.showMessageDialog(null, "Vehículos en diagonal principal:\n" + listaDiagonal.JuntarDesdeStart());
+    }
+    return listaDiagonal;
+}
+public ListaSimple crearListaMotos(Archivos objArch) {
+    ListaSimple listaMotos = new ListaSimple();
+    boolean hayMotos = false;
+
+    try {
+        objArch.AbrirArchivoModoLectura("Vehiculos.txt");
+        String[] Reg = objArch.LeerRegistro(6);
+        
+        while (Reg != null) {
+            if (Reg[1].equalsIgnoreCase("Motocicleta")) {
+                Vehiculos v = new Vehiculos(
+                    Reg[0], Reg[1], Reg[2], Reg[3], 
+                    Integer.parseInt(Reg[4]), 
+                    Boolean.parseBoolean(Reg[5])
+                );
+                listaMotos.CrearPorFinal(v);
+                hayMotos = true;
+            }
+            Reg = objArch.LeerRegistro(6);
+        }
+        objArch.CerrarArchivoModoLectura();
+        
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(null, "Error al leer el archivo.");
+    }
+
+    if (!hayMotos) {
+        JOptionPane.showMessageDialog(null, "No hay motocicletas en el archivo.");
+    }
+    return listaMotos;
+}
+
+
+ 
+
  
     
     //prueba de escritorio, para no tener que estar ingresando siempre
