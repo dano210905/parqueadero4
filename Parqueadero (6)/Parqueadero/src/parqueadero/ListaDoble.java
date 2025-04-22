@@ -248,62 +248,7 @@ public void LiberarDato(String placa) {
         JOptionPane.showMessageDialog(null, "❌ Placa no encontrada.");
     }
 }
-// For ListaDoble
-public int NumeroElementos(ListaDoble lista) {
-    int count = 0;
-    Nodo q = lista.getStart();
-    while (q != null) {
-        count++;
-        q = q.getSig();
-    }
-    return count;
-}
-public void invertirListaDoble(ListaDoble lista) {
-    if (lista.IsEmpty() || lista.getStart().getSig() == null) {
-        return; // Empty or single-element list
-    }
 
-    Nodo current = lista.getStart();
-    Nodo temp = null;
-    
-    // Swap next and prev for all nodes
-    while (current != null) {
-        temp = current.getAnt();
-        current.setAnt(current.getSig());
-        current.setSig(temp);
-        current = current.getAnt(); // Move to next node (original next)
-    }
-
-    // Update start and end pointers
-    temp = lista.getStart();
-    lista.setStart(lista.getEnd());
-    lista.setEnd(temp);
-}
-public void ordenarListaPorPlaca(ListaDoble lista) {
-    if (lista.IsEmpty() || lista.getStart().getSig() == null) {
-        return; // Empty or single-element list
-    }
-
-    boolean swapped;
-    do {
-        swapped = false;
-        Nodo current = lista.getStart();
-        
-        while (current.getSig() != null) {
-            Vehiculos v1 = (Vehiculos) current.getDato();
-            Vehiculos v2 = (Vehiculos) current.getSig().getDato();
-            
-            if (v1.getNroPlaca().compareToIgnoreCase(v2.getNroPlaca()) > 0) {
-                // Swap data
-                Object temp = current.getDato();
-                current.setDato(current.getSig().getDato());
-                current.getSig().setDato(temp);
-                swapped = true;
-            }
-            current = current.getSig();
-        }
-    } while (swapped);
-}
 
 
 
@@ -329,11 +274,6 @@ public void ordenarListaPorPlaca(ListaDoble lista) {
     
     
     
-    
-    
-    
-}
-
     
     
     
