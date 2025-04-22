@@ -6,7 +6,6 @@ import javax.swing.JOptionPane;
 
 public class CRUDVehiculo
 {
-     Archivos objArch = new Archivos();
      /*Metodo que busca un vehiculo en el archivo plano y si lo encuentra
     retorna verdadero, sino lo encuentra retorna falso*/
     public boolean Buscar(Archivos objArch, String pla) {
@@ -215,61 +214,5 @@ public class CRUDVehiculo
       }
       return numLineas;
     }//fin de contar lineas
-  // En CRUDVehiculo.java
-public int contarPorTipoEnArchivo(Archivos objArch, String tipo) {
-    int contador = 0;
-    try {
-        // Abrir archivo en modo lectura
-        objArch.AbrirArchivoModoLectura("Vehiculos.txt");
-        
-        String[] Reg;
-        // Leer registro por registro
-        while ((Reg = objArch.LeerRegistro(6)) != null) {
-            // Reg[1] contiene el tipo de vehículo
-            if (Reg[1].equalsIgnoreCase(tipo)) {
-                contador++;
-            }
-        }
-        
-        // Cerrar archivo
-        objArch.CerrarArchivoModoLectura();
-    } catch (Exception e) {
-        JOptionPane.showMessageDialog(null, "Error contando vehículos por tipo: " + e.getMessage());
-    }
-    return contador;
-}
-// Método para contar vehículos por tipo
-public int contarVehiculosPorTipo(String tipo) {
-    int contador = 0;
-    try {
-        String[] Reg;
-        objArch.AbrirArchivoModoLectura("Vehiculos.txt");
-        while((Reg = objArch.LeerRegistro(6)) != null) {
-            if(Reg[1].equalsIgnoreCase(tipo)) contador++;
-        }
-        objArch.CerrarArchivoModoLectura();
-    } catch(Exception e) {
-        JOptionPane.showMessageDialog(null, "Error contando vehículos: " + e.getMessage());
-    }
-    return contador;
-}
-
-// Método para buscar vehículos por color
-public String buscarPorColor(String color) {
-    StringBuilder resultado = new StringBuilder();
-    try {
-        String[] Reg;
-        objArch.AbrirArchivoModoLectura("Vehiculos.txt");
-        while((Reg = objArch.LeerRegistro(6)) != null) {
-            if(Reg[3].equalsIgnoreCase(color)) {
-                resultado.append("- ").append(Reg[0]).append(" (").append(Reg[2]).append(")\n");
-            }
-        }
-        objArch.CerrarArchivoModoLectura();
-    } catch(Exception e) {
-        JOptionPane.showMessageDialog(null, "Error buscando por color: " + e.getMessage());
-    }
-    return resultado.toString();
-}
 
 }//fin clase CRUD
