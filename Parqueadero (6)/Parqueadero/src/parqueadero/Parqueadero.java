@@ -89,7 +89,9 @@ public class Parqueadero {
                               +  "16. Promedio de modelos (diagonal/fila)\n" 
                                 +  "17. cambiar estado vehiculos 2011\n"
                                 +  "18. reemplazar extremos\n"
-                               +  "19. Volver al menú principal");
+                                +  "19. lista doble vehiculos rojos\n"
+                                +  "20. copiar diagonal principal a la lista\n"
+                               +  "22. Volver al menú principal");
                          
                             
                         switch(op3) {
@@ -125,24 +127,38 @@ public class Parqueadero {
                             case 8:
                                 objV = (Vehiculos)objManMat.BuscarMasNuevo(mat, f, c);
                                 JOptionPane.showMessageDialog(null, "Vehículo más nuevo:\n" + objV.EstructuraReg());
+                        case 9:
+                                if (mat != null)//hay datos
+                                {
+                                    if (objManMat.GrabarMatriz(mat, f, c, objarc, objcrudv) == true) {
+                                        JOptionPane.showMessageDialog(null, "se grabaron vehiculos de la matriz al archivo");
+                                    } else {
+                                        JOptionPane.showMessageDialog(null, "NO se grabaron vehiculos de la matriz al archivo");
+                                    }
+                                }
+                                //fin si
                                 break;
-                                     case 9: // Copiar matriz a archivo
-                                if(mat != null) {
-                               String resultado = objManMat.GrabarMatriz(mat, f, c, objarc, objcrudv);
-                                JOptionPane.showMessageDialog(null, resultado);
-                         } else {
-                                         JOptionPane.showMessageDialog(null, "No hay matriz creada");
-                               }
-                              break;
-  case 10:
-    try {
-        String resultado = ((ManejoMatriz)objManMat).copiarDosRegistrosAMatriz(objarc, mat, f, c);
-        JOptionPane.showMessageDialog(null, resultado);
-    } catch (Exception e) {
-        JOptionPane.showMessageDialog(null, "Error: " + e.getMessage());
+    case 10:
+    if(mat != null) {
+        Object[] resultados = objManMat.copiarMatrizAArchivoConVisualizacion(mat, f, c, objarc, objcrudv);
+        String reporte = (String)resultados[0];
+        Object[][] nuevaMatriz = (Object[][])resultados[1];
+        
+        // Mostrar reporte
+        JOptionPane.showMessageDialog(null, reporte);
+        
+        // Mostrar matriz actualizada
+        JOptionPane.showMessageDialog(null, "Matriz actualizada:\n" + 
+            objMa.JuntarMatrizFilas(nuevaMatriz));
+        
+        // Actualizar referencia a la matriz
+        mat = nuevaMatriz;
+    } else {
+        JOptionPane.showMessageDialog(null, "La matriz está vacía - No hay datos para copiar");
     }
     break;
-                            case 11:
+ 
+                          case 11:
                                 objManMat.contarVehiculosMismoColor(objarc, mat, f, c);
                                 break;
 
@@ -209,9 +225,32 @@ case 18: // Reemplazar extremos de matriz (versión simplificada)
     } else {
         JOptionPane.showMessageDialog(null, "Operación cancelada");
     }
-    break;          }
-                    } while(op3 < 19);
+    break; 
+  case 19: // Filtrar vehículos rojos a lista doble
+    ListaDoble listaRojos = objManMat.FiltrarVehiculosRojos(mat, f, c);
+    if(listaRojos.IsEmpty()) {
+        JOptionPane.showMessageDialog(null, "La matriz no tiene vehículos rojos, ¡no se creó la lista!");
+    } else {
+        JOptionPane.showMessageDialog(null, "Lista de vehículos rojos:\n" + listaRojos.JuntarDesdeStart());
+    }
+    break;
+
+case 20: // Copiar diagonal principal
+        if(mat != null) {
+            ListaDoble listaDiagonal = objManMat.copiarDiagonalPrincipal(mat, f, c);
+            if(!listaDiagonal.IsEmpty()) {
+                JOptionPane.showMessageDialog(null, "Diagonal principal:\n" + listaDiagonal.JuntarDesdeStart());
+            }
+        } else {
+            JOptionPane.showMessageDialog(null, "Matriz vacía");
+        }
+        break;
+                        
+                        }
+                    } while(op3 < 22);
                     break;
+                    
+  
                     
                 case 3: // Menú Lista Simple
                     do {
@@ -277,7 +316,17 @@ case 12:
     // Llamar al método (ahora muestra el resultado directamente)
     objML.crearListasPorAntiguedad(listaAntiguos, listaNuevos);
     break;
-                                
+            case 13: // Crear lista con motos del archivo
+    ListaSimple listaMotos = objML.FiltrarMotosArchivo(objarc);
+    if(listaMotos.IsEmpty()) {
+        JOptionPane.showMessageDialog(null, "No hay motos en el archivo");
+    } else {
+        JOptionPane.showMessageDialog(null, "Lista de motos:\n" + listaMotos.JuntarDesdeInicio());
+    }
+    break;
+case 14: // Mostrar número de elementos
+    JOptionPane.showMessageDialog(null, "La lista simple tiene " + objLS.NumeroElementos() + " elementos");
+    break;                    
                                 
                             // ... otros casos de lista simple ...
                         }
@@ -327,6 +376,17 @@ case 12:
                                 objLD = objML.CopiarArchivoLista(objarc, objLD);
                                 JOptionPane.showMessageDialog(null, "Registros copiados a lista");
                                 break;
+                                case 12: // Mostrar número de elementos
+    JOptionPane.showMessageDialog(null, "La lista doble tiene " + objLD.NumeroElementos() + " elementos");
+    break;
+case 13: // Invertir lista doble
+    objLD.InvertirLista();
+    JOptionPane.showMessageDialog(null, "Lista invertida:\n" + objLD.JuntarDesdeStart());
+    break;
+case 14: // Ordenar lista doble por placa
+    objLD.OrdenarPorPlaca();
+    JOptionPane.showMessageDialog(null, "Lista ordenada por placa:\n" + objLD.JuntarDesdeStart());
+    break;
                             // ... otros casos de lista doble ...
                         }
                     } while(op5 < 12);
