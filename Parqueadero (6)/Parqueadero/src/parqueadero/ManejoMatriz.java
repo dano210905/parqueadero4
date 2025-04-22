@@ -819,8 +819,54 @@ public ListaSimple crearListaMotos(Archivos objArch) {
     }
     return listaMotos;
 }
+public String BuscarVehiculocolor(Object mat[][],int f,int c, String color)
+{
 
+String carros= "";
+String vehi = "Automóvil";
+int i,j ; 
 
+for(i=0;i<=f-1;i++)//ciclo filas
+        {
+            for(j=0;j<=c-1;j++)//ciclo columnas
+            {
+            if ( vehi.equalsIgnoreCase (((Vehiculos)mat[i][j]).getTipoVehiculo())){
+             if(color.equalsIgnoreCase(((Vehiculos)mat[i][j]).getColor()))
+                 
+		carros = carros +((Vehiculos)mat[i][j]).toString()+"\n";
+             
+	     //fin si
+            }//fin para j
+        }//fin para i 
+	   if (carros.equalsIgnoreCase("")) {
+            JOptionPane.showMessageDialog(null,"El vehículo NO esta almacenado en la matriz");
+    }
+//Fin si
+ }
+return carros;
+}//fin buscar especifico
+public ListaDoble FiltrarVehiculosRojos(Object mat[][], int maxf, int maxc) {
+    ListaDoble listaRojos = new ListaDoble();
+    for(int i=0; i<maxf; i++) {
+        for(int j=0; j<maxc; j++) {
+            Vehiculos v = (Vehiculos)mat[i][j];
+            if(v.getColor().equalsIgnoreCase("rojo")) {
+                listaRojos.CrearPorFinal(v);
+            }
+        }
+    }
+    return listaRojos;
+}
+
+public ListaSimple FiltrarDiagonalPrincipal(Object mat[][], int maxf, int maxc) {
+    ListaSimple listaDiagonal = new ListaSimple();
+    if(maxf == maxc) { // Solo si es cuadrada
+        for(int i=0; i<maxf; i++) {
+            listaDiagonal.CrearPorFinal(mat[i][i]);
+        }
+    }
+    return listaDiagonal;
+}
  
 
  
