@@ -114,6 +114,140 @@ public class ManejoListas
         }
         return ld;//se cambia, se retorna
      }//fin de copiar archivo a lista
+    public ListaDoble vehiculosMismoColorUltimoMatriz(Object mat[][], int maxf, int maxc, 
+                                                 Archivos objArch) {
+    ListaDoble listaResultado = new ListaDoble();
     
-}//fin clase manejo de listas
+    if(maxf == 0 || maxc == 0) return listaResultado;
+    
+    // Obtener color del último vehículo en matriz
+    Vehiculos ultimo = (Vehiculos)mat[maxf-1][maxc-1];
+    String colorBuscado = ultimo.getColor();
+    
+    // Buscar en archivo y agregar a lista
+    try {
+        objArch.AbrirArchivoModoLectura("Vehiculos.txt");
+        String[] Reg;
+        while((Reg = objArch.LeerRegistro(6)) != null) {
+            if(Reg[3].equalsIgnoreCase(colorBuscado)) {
+                Vehiculos v = new Vehiculos(Reg[0], Reg[1], Reg[2], Reg[3], 
+                                          Integer.parseInt(Reg[4]), 
+                                          Boolean.parseBoolean(Reg[5]));
+                listaResultado.CrearPorFinal(v);
+            }
+        }
+        objArch.CerrarArchivoModoLectura();
+    } catch(Exception e) {
+        JOptionPane.showMessageDialog(null, "Error buscando por color: " + e.getMessage());
+    }
+    
+    return listaResultado;
+}
+    public String pasarListaSimpleAArchivo(ListaSimple lista, Archivos objArch, CRUDVehiculo objCrud) {
+    if (lista.IsEmpty()) {
+        return "La lista simple está vacía";
+    }
 
+    int grabados = 0;
+    try {
+        objArch.AbrirArchivoModoEscritura("Vehiculos.txt");
+        Nodo actual = lista.getStart();
+        
+        while (actual != null) {
+            Vehiculos v = (Vehiculos) actual.getDato();
+            if (!objCrud.Buscar(objArch, v.getNroPlaca())) {
+                objArch.EscribirRegistro(v.EstructuraReg());
+                grabados++;
+            }
+            actual = actual.getSig();
+        }
+        
+        return "Se grabaron " + grabados + " vehículos de la lista al archivo";
+    } catch (Exception e) {
+        return "Error al grabar: " + e.getMessage();
+    } finally {
+        objArch.CerrarArchivoModoEscritura();
+    }
+}
+    public ListaSimple pasarArchivoAListaSimple(Archivos objArch) {
+    ListaSimple lista = new ListaSimple();
+    try {
+        objArch.AbrirArchivoModoLectura("Vehiculos.txt");
+        String[] Reg;
+        
+        while ((Reg = objArch.LeerRegistro(6)) != null) {
+            Vehiculos v = new Vehiculos(
+                Reg[0], Reg[1], Reg[2], Reg[3], 
+                Integer.parseInt(Reg[4]), 
+                Boolean.parseBoolean(Reg[5])
+            );
+            lista.CrearPorFinal(v);
+        }
+        
+        objArch.CerrarArchivoModoLectura();
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(null, "Error: " + e.getMessage());
+    }
+    return lista;
+}
+public void crearListasPorAntiguedad(ListaSimple listaAntiguos, ListaSimple listaNuevos) {
+    // 1. Crear matriz de prueba usando el método existente
+    Object[][] mat = new Object[3][3];
+    ManejoMatriz objManejoMat = new ManejoMatriz();
+    mat = objManejoMat.PruebaEscritorio(mat);
+    
+    // 2. Procesar la matriz
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            Vehiculos v = (Vehiculos)mat[i][j];
+            int modelo = v.getModelo();
+            
+            // 3. Clasificar los vehículos
+            if (modelo > 1980 && modelo < 2014) {
+                listaAntiguos.CrearPorFinal(v);
+            } else if (modelo >= 2014 && modelo <= 2024) {
+                listaNuevos.CrearPorFinal(v);
+            }
+        }
+    }
+    
+    // 4. Preparar mensaje de resultado
+    String mensaje = "=== Vehículos Clasificados ===\n\n";
+    
+    mensaje += "ANTIGUOS (1981-2013):\n";
+    mensaje += listaAntiguos.IsEmpty() ? "No hay vehículos antiguos\n" : listaAntiguos.JuntarDesdeInicio();
+    
+    mensaje += "\nNUEVOS (2014-2024):\n";
+    mensaje += listaNuevos.IsEmpty() ? "No hay vehículos nuevos\n" : listaNuevos.JuntarDesdeInicio();
+    
+    // 5. Mostrar el resultado directamente
+    JOptionPane.showMessageDialog(null, mensaje);
+}
+  
+public ListaSimple filtrarMotosDesdeArchivo(Archivos objArch) {
+        ListaSimple lista = new ListaSimple();
+        try {
+            objArch.AbrirArchivoModoLectura("Vehiculos.txt");
+            String[] registro;
+            while((registro = objArch.LeerRegistro(6)) != null) {
+                if(registro[1].equalsIgnoreCase("motocicleta")) {
+                    Vehiculos moto = new Vehiculos(
+                        registro[0], registro[1], registro[2], 
+                        registro[3], Integer.parseInt(registro[4]), 
+                        Boolean.parseBoolean(registro[5])
+                    );
+                    lista.CrearPorFinal(moto);
+                }
+            }
+            objArch.CerrarArchivoModoLectura();
+        } catch(Exception e) {
+            JOptionPane.showMessageDialog(null, "Error leyendo archivo");
+        }
+        
+        if(lista.IsEmpty()) {
+            JOptionPane.showMessageDialog(null, "No se encontraron motos");
+        }
+        
+        return lista;
+    }
+}//fin clase manejo de listas
